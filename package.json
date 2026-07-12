@@ -1,0 +1,16 @@
+{
+  "name": "trademe-listing-checker",
+  "version": "0.1.0",
+  "description": "Red-flag risk checker for Trade Me marketplace listings",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.111.0",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1"
+  }
+}
