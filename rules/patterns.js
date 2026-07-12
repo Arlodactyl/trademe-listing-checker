@@ -153,7 +153,83 @@ function checkSellerFeedback(listing) {
   };
 }
 
-const rules = [checkHedgeLanguage, checkVagueSourcing, checkSellerFeedback];
+// signs a description was never actually written for this specific item, it's a
+// template with the details never filled in. all bounded so there's no ReDoS risk
+// from running these against whatever a user pastes in.
+const PLACEHOLDER_PATTERNS = [
+  /\[[^\]\n]{1,60}\]/,
+  /\{\{[^}\n]{1,60}\}\}/,
+  /\blorem ipsum\b/i,
+  /\b(insert|enter|add)\s+(product|item|title|description|name)\s*(here)?\b/i,
+  /\byour\s+(product|item)\s+(name|title)\s+here\b/i,
+  /\bxxxx+\b/i,
+];
+
+function findPlaceholderArtifacts(text) {
+  const hits = [];
+  for (const pattern of PLACEHOLDER_PATTERNS) {
+    const match = text.match(pattern);
+    if (match) hits.push(match[0].trim());
+  }
+  return hits;
+}
+
+// marketing filler that could describe almost any item on the site. one or two of
+// these on their own is normal seller-speak, a description made up of nothing else
+// is a sign nobody wrote anything specific to this particular listing
+const BOILERPLATE_PHRASES = [
+  '100% authentic',
+  'high quality material',
+  'satisfaction guaranteed',
+  'fast shipping',
+  'great condition',
+  'must have item',
+  'best price guaranteed',
+  'premium quality',
+  'as advertised',
+];
+
+function countBoilerplatePhrases(text) {
+  const lower = text.toLowerCase();
+  return BOILERPLATE_PHRASES.filter((phrase) => lower.includes(phrase)).length;
+}
+
+function checkTemplatedDescription(listing) {
+  const description = toText(listing.description);
+  if (!description) return null;
+
+  const placeholderHits = findPlaceholderArtifacts(description);
+  // a leftover double space is often what's left when a template's product-name
+  // placeholder gets deleted without anyone tidying up the gap
+  const doubleSpaceCount = (description.match(/ {2,}/g) || []).length;
+  const boilerplateCount = countBoilerplatePhrases(description);
+
+  const signals = [];
+
+  if (placeholderHits.length > 0) {
+    signals.push(`leftover placeholder text ("${placeholderHits.join('", "')}")`);
+  }
+
+  if (doubleSpaceCount >= 2) {
+    signals.push('repeated double spaces, often left behind when a product name is swapped out of a template');
+  }
+
+  // three or more of these stacked together with nothing else is a stronger tell than
+  // any single phrase, most real listings mix in at least one specific detail
+  if (boilerplateCount >= 3) {
+    signals.push('reads like generic marketing boilerplate with no specific detail about this item, no size, model, quantity, or anything else that pins it to this listing');
+  }
+
+  if (signals.length === 0) return null;
+
+  return {
+    id: 'templated-description',
+    severity: placeholderHits.length > 0 ? 'high' : 'medium',
+    message: `description looks templated: ${signals.join('; ')}`,
+  };
+}
+
+const rules = [checkHedgeLanguage, checkVagueSourcing, checkSellerFeedback, checkTemplatedDescription];
 
 function runChecks(listing) {
   return rules
