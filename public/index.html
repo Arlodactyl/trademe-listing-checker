@@ -23,6 +23,25 @@
     </header>
 
     <main>
+      <div class="card import-card">
+        <div class="field">
+          <label for="import-url">Import from a Trade Me listing link</label>
+          <div class="import-row">
+            <input
+              type="url"
+              id="import-url"
+              placeholder="https://www.trademe.co.nz/a/marketplace/.../listing/1234567890"
+            />
+            <button type="button" id="import-button" class="button button--secondary">
+              <span class="button__label">Fetch listing</span>
+            </button>
+          </div>
+          <p id="import-error" class="form-error" hidden></p>
+        </div>
+      </div>
+
+      <p class="divider">or fill it in yourself</p>
+
       <form id="listing-form" class="card" novalidate>
         <div class="field">
           <label for="title">Listing title</label>
@@ -73,6 +92,10 @@
 
       <section id="results" class="results" hidden aria-live="polite"></section>
     </main>
+
+    <footer class="footer">
+      <p>Built by <a href="https://github.com/Arl-Heb" target="_blank" rel="noopener noreferrer">Arl-Heb</a></p>
+    </footer>
   </div>
 
   <script src="script.js"></script>

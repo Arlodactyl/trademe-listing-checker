@@ -3,6 +3,10 @@ const submitButton = document.getElementById('submit-button');
 const formError = document.getElementById('form-error');
 const results = document.getElementById('results');
 
+const importUrlInput = document.getElementById('import-url');
+const importButton = document.getElementById('import-button');
+const importError = document.getElementById('import-error');
+
 // rule ids come back as kebab-case ("hedge-language"), turn that into something
 // readable without needing to keep a separate label for every rule id
 function toReadableLabel(id) {
@@ -22,6 +26,37 @@ function showFormError(message) {
 function clearFormError() {
   formError.hidden = true;
   formError.textContent = '';
+}
+
+function setImportLoading(isLoading) {
+  importButton.disabled = isLoading;
+  importButton.querySelector('.button__label').textContent = isLoading ? 'Fetching…' : 'Fetch listing';
+}
+
+function showImportError(message) {
+  importError.textContent = message;
+  importError.hidden = false;
+}
+
+function clearImportError() {
+  importError.hidden = true;
+  importError.textContent = '';
+}
+
+// fills in whatever came back from the import, leaves everything else alone,
+// and never touches a field the import didn't return anything for
+function populateFormFromImport(listing) {
+  if (listing.title) form.elements.title.value = listing.title;
+  if (listing.description) form.elements.description.value = listing.description;
+  if (listing.price !== undefined) form.elements.price.value = listing.price;
+  if (listing.category) form.elements.category.value = listing.category;
+
+  const feedback = listing.sellerFeedback;
+  if (feedback) {
+    if (feedback.percentPositive !== undefined) form.elements.percentPositive.value = feedback.percentPositive;
+    if (feedback.reviewCount !== undefined) form.elements.reviewCount.value = feedback.reviewCount;
+    if (feedback.memberSince) form.elements.memberSince.value = feedback.memberSince;
+  }
 }
 
 function buildListingFromForm(formData) {
@@ -103,6 +138,39 @@ function renderResults(result) {
 
   results.hidden = false;
 }
+
+importButton.addEventListener('click', async () => {
+  clearImportError();
+  const url = importUrlInput.value.trim();
+
+  if (!url) {
+    showImportError('Paste a Trade Me listing link first.');
+    return;
+  }
+
+  setImportLoading(true);
+
+  try {
+    const response = await fetch('/api/import', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url }),
+    });
+
+    const body = await response.json();
+
+    if (!response.ok) {
+      showImportError(body.error || 'Could not import that listing.');
+      return;
+    }
+
+    populateFormFromImport(body);
+  } catch (err) {
+    showImportError('Could not reach the server. Check your connection and try again.');
+  } finally {
+    setImportLoading(false);
+  }
+});
 
 form.addEventListener('submit', async (event) => {
   event.preventDefault();

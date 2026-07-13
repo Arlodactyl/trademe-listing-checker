@@ -189,10 +189,53 @@ textarea:focus {
   opacity: 0.6;
 }
 
+.button--secondary {
+  background: transparent;
+  color: var(--brand);
+  border: 1px solid var(--brand);
+  padding: 12px 22px;
+  white-space: nowrap;
+}
+
+.button--secondary:hover:not(:disabled) {
+  background: rgba(255, 122, 71, 0.1);
+}
+
 .form-error {
   margin: 16px 0 0;
   color: var(--risk-high);
   font-size: 0.9rem;
+}
+
+.import-card {
+  margin-bottom: 8px;
+}
+
+.import-row {
+  display: flex;
+  gap: 12px;
+}
+
+.import-row input {
+  flex: 1;
+}
+
+.divider {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin: 20px 0 28px;
+}
+
+.footer {
+  margin-top: 48px;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.footer a {
+  color: var(--brand);
 }
 
 /* the results report, built to read at a glance: the risk level is the first
@@ -329,5 +372,9 @@ textarea:focus {
   .field-row {
     flex-direction: column;
     gap: 0;
+  }
+
+  .import-row {
+    flex-direction: column;
   }
 }
