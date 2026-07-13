@@ -107,10 +107,22 @@ async function importListing(rawUrl) {
   const validation = validateListingUrl(rawUrl);
   if (validation.error) return { error: validation.error };
 
-  const browser = await chromium.launch();
+  // browser launch used to sit outside this try block, which meant a launch
+  // failure (a broken chromium install, no resources available) skipped our
+  // friendly error message entirely and surfaced as a raw 500 further up
+  let browser;
   try {
+    browser = await chromium.launch();
     const page = await browser.newPage();
     await page.goto(validation.url, { waitUntil: 'domcontentloaded', timeout: NAVIGATION_TIMEOUT_MS });
+
+    // our validation only checked the URL we were given, trade me itself could
+    // still redirect somewhere else (an expired listing, a login wall). refuse
+    // to read a page that ended up somewhere our allowlist wouldn't have accepted
+    const landedOn = new URL(page.url());
+    if (!ALLOWED_HOSTS.has(landedOn.hostname) || !LISTING_PATH_PATTERN.test(landedOn.pathname)) {
+      return { error: 'that link redirected somewhere this app will not follow' };
+    }
 
     // the description panel exists in the DOM before Angular has actually filled
     // it in, so waiting for the element alone is a race, it can resolve while
@@ -125,8 +137,8 @@ async function importListing(rawUrl) {
     console.error('Trade Me import failed:', err.message);
     return { error: 'could not read that listing, it may have changed format or no longer exist' };
   } finally {
-    await browser.close();
+    if (browser) await browser.close();
   }
 }
 
-module.exports = { importListing };
+module.exports = { importListing, validateListingUrl };
