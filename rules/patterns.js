@@ -1,3 +1,9 @@
+// each rule below is a plain function: (listing) -> result or null. `null` means
+// the rule found nothing, a result is always { id, severity, message } where
+// severity is 'medium' or 'high'. to add a new rule, write a function in that
+// shape and add it to the `rules` array near the bottom of this file, runChecks
+// and the route handler don't need to know anything changed.
+
 // listing fields come straight from req.body, so treat them as untrusted input.
 // anything that isn't actually a string gets treated as blank rather than crashing
 // the rule on a bad .toLowerCase() call.

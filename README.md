@@ -34,14 +34,21 @@ npm start
 
 Then open `http://localhost:3000`.
 
+Run the test suite with `npm test`. It only covers `rules/patterns.js` for now, those are plain functions with no network calls, so they're the cheapest thing in the app to test and the part most likely to regress as more rules get added.
+
 ## Project layout
 
 ```
-server.js          Express app, handles the /api/check endpoint
-rules/patterns.js   the pattern-matching rules
-public/             frontend (index.html, style.css, script.js)
+server.js                    Express app: routing, rate limiting, request logging
+rules/patterns.js            the pattern-matching rules, plus how to add a new one
+services/checkListing.js     runs the rules, decides whether to call Haiku, combines a risk level
+services/haiku.js            the Claude Haiku call itself, isolated so the model/prompt/schema live in one place
+public/                      frontend (index.html, style.css, script.js)
+test/patterns.test.js        unit tests for the pattern rules
 ```
+
+`services/checkListing.js` is deliberately the only place that knows how a risk level gets decided. The route handler in `server.js` just validates the request and calls it, so the same logic could be reused from a CLI or a test without dragging Express along with it.
 
 ## Status
 
-The pattern rules and the Haiku fallback are both wired in. The frontend is still a placeholder, the results screen hasn't been designed yet.
+The pattern rules and the Haiku fallback are both wired in, with unit tests covering the rules. The frontend is still a placeholder, the results screen hasn't been designed yet.
