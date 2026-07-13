@@ -34,20 +34,31 @@ npm start
 
 Then open `http://localhost:3000`.
 
+`npm install` also downloads a Chromium build for Playwright (used by the link import below), which is a few hundred MB and can take a minute the first time.
+
 Run the test suite with `npm test`. It only covers `rules/patterns.js` for now, those are plain functions with no network calls, so they're the cheapest thing in the app to test and the part most likely to regress as more rules get added.
 
 ## Project layout
 
 ```
-server.js                    Express app: routing, rate limiting, request logging
-rules/patterns.js            the pattern-matching rules, plus how to add a new one
-services/checkListing.js     runs the rules, decides whether to call Haiku, combines a risk level
-services/haiku.js            the Claude Haiku call itself, isolated so the model/prompt/schema live in one place
-public/                      frontend (index.html, style.css, script.js)
-test/patterns.test.js        unit tests for the pattern rules
+server.js                      Express app: routing, rate limiting, request logging
+rules/patterns.js              the pattern-matching rules, plus how to add a new one
+services/checkListing.js       runs the rules, decides whether to call Haiku, combines a risk level
+services/haiku.js              the Claude Haiku call itself, isolated so the model/prompt/schema live in one place
+services/tradeMeImport.js      fetches and reads a pasted listing link, see the note below
+public/                        frontend (index.html, style.css, script.js)
+test/patterns.test.js          unit tests for the pattern rules
 ```
 
 `services/checkListing.js` is deliberately the only place that knows how a risk level gets decided. The route handler in `server.js` just validates the request and calls it, so the same logic could be reused from a CLI or a test without dragging Express along with it.
+
+## Importing from a listing link
+
+You can paste a Trade Me listing URL instead of typing everything in by hand, it fills in the form for you, and every field stays editable afterwards so you can fix anything before checking.
+
+Worth being upfront about how this works: Trade Me's listing pages are a fully client rendered Angular app, there's nothing usable in the raw HTML, so this launches a real headless browser server-side, loads the page, and reads the DOM once it's rendered. That also means it's genuinely against Trade Me's `robots.txt`, which explicitly disallows automated fetching of listing pages. I looked into this, weighed a couple of alternatives that wouldn't touch their servers at all (pasting the listing text yourself, a bookmarklet that reads the page in your own browser), and decided to build this version anyway, knowingly, not by accident. If you're forking this for something more than personal, occasional use, that tradeoff is worth reconsidering.
+
+Practically, it only ever fetches `trademe.co.nz` listing URLs (`https://` only, `/a/marketplace/.../listing/<id>` paths only, nothing else, nowhere else), it's rate limited far tighter than the regular check endpoint since spinning up a browser per request is expensive, and it was built and tested against marketplace auction listings specifically. Buy Now listings, and other categories like Motors, Property, or Jobs, use different page markup and may not extract as cleanly.
 
 ## Design
 
