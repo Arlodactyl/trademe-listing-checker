@@ -6,6 +6,17 @@ const { checkListing } = require('./services/checkListing');
 const { importListing } = require('./services/tradeMeImport');
 const haiku = require('./services/haiku');
 
+// a genuinely unexpected error (not an Express route rejection, something
+// truly uncaught, a timer callback, an event handler) would otherwise crash
+// the whole process and take every other in-flight request down with it.
+// log it and keep running instead, one bad request shouldn't kill the server
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught exception:', err);
+});
+process.on('unhandledRejection', (err) => {
+  console.error('Unhandled rejection:', err);
+});
+
 const app = express();
 const port = process.env.PORT || 3000;
 
